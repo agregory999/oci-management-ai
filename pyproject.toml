@@ -1,0 +1,29 @@
+[project]
+name = "oci-management-app"
+version = "0.1.0"
+description = "Tkinter app for OCI management with AI insights"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "ttkbootstrap>=1.10",
+    "oci>=2.128",
+    "pyinstaller>=5.13",
+    "markdown>=3.4",
+    "tkhtmlview>=0.2",
+    "sphinx>=7.0",
+    "sphinxcontrib-napoleon>=0.7"
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.pyinstaller]
+main-script = "src/main.py"
+noconfirm = true
+log-level = "INFO"
+distpath = "dist"
+workpath = "build"
+clean = true
+onefile = true
+add-data = []

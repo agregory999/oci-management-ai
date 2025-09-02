@@ -1,0 +1,18 @@
+stages:
+  - build
+
+build_job:
+  stage: build
+  parallel:
+    matrix:
+      - OS: [ubuntu-latest, windows-latest, macos-latest]
+  image: python:3.10
+  before_script:
+    - pip install --upgrade pip
+    - pip install .  # Installs dependencies from pyproject.toml
+  script:
+    - pyinstaller --noconfirm --onefile --log-level=INFO src/main.py
+  artifacts:
+    paths:
+      - dist/main*
+    expire_in: 1 week
