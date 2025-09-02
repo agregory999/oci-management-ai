@@ -1,0 +1,7 @@
+ttkbootstrap>=1.10
+oci>=2.128
+pyinstaller>=5.13
+markdown>=3.4
+tkhtmlview>=0.2
+sphinx>=7.0
+sphinxcontrib-napoleon>=0.7

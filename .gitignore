@@ -1,2 +1,6 @@
-# Ignore Sphinx build output
 docs/build/
+dist/
+build/
+cache/
+*.pyc
+__pycache__/

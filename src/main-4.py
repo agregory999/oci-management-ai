@@ -303,6 +303,7 @@ class App(ttk.Window):
         self.ai_model_var = tk.StringVar(value="default_model")
         self.ai_endpoint_var = tk.StringVar(value=REGION_TO_AI_ENDPOINT.get('us-ashburn-1', 'https://api.example.com'))
         self.compartment_ocid_var = tk.StringVar(value="default-compartment-id")
+        self.ai_enabled_var = tk.BooleanVar(value=True)
         self.load_from_var = tk.StringVar(value="Instance Principal")
         self.secondary_var = tk.StringVar()
         self.show_console_var = tk.BooleanVar(value=False)
@@ -326,14 +327,15 @@ class App(ttk.Window):
         # Styles for visibility
         style = ttk.Style()
         style.configure('TLabel', font=('Helvetica', 10), foreground='black', background='white')
-        style.configure('TButton', font=('Helvetica', 10), foreground='black', background='lightgray')
+        style.configure('TButton', font=('Helvetica', 10), foreground='black', background='lightgray', bootstyle=INFO)
         style.configure('TCheckbutton', font=('Helvetica', 10), foreground='black', background='white')
         style.configure('TCombobox', font=('Helvetica', 10), foreground='black', background='white')
         style.configure('TEntry', font=('Helvetica', 10), foreground='black', background='white')
         style.configure('TLabelFrame.Label', font=('Helvetica', 10, 'bold'), foreground='black', background='white')
+        style.configure('TNotebook', bootstyle=INFO)
 
         # Main notebook
-        self.notebook = ttk.Notebook(self)
+        self.notebook = ttk.Notebook(self, style='TNotebook')
         self.notebook.grid(row=0, column=0, sticky='nsew')
 
         # START tab
@@ -344,23 +346,26 @@ class App(ttk.Window):
         general_frame = ttk.LabelFrame(self.start_frame, text="General", padding=10)
         general_frame.pack(fill=X, padx=10, pady=5)
         ttk.Label(general_frame, text="Configure general application settings.", font=('Helvetica', 10)).pack(anchor='w', pady=2)
+        console_log_frame = ttk.Frame(general_frame)
+        console_log_frame.pack(fill=X, pady=2)
         self.console_toggle = ttk.Checkbutton(
-            general_frame,
+            console_log_frame,
             text="Show Console Log",
             variable=self.show_console_var,
             command=self.toggle_console,
             style='TCheckbutton'
         )
-        self.console_toggle.pack(anchor='w', padx=5, pady=2)
-        log_level_frame = ttk.Frame(general_frame)
-        log_level_frame.pack(fill=X, pady=2)
-        ttk.Label(log_level_frame, text="Log Level:", style='TLabel').pack(side=LEFT, padx=5)
+        self.console_toggle.pack(side=LEFT, padx=5)
+        log_level_frame = ttk.Frame(console_log_frame)
+        log_level_frame.pack(side=LEFT, padx=5)
+        ttk.Label(log_level_frame, text="Log Level:", style='TLabel').pack(side=LEFT)
         self.log_level_combo = ttk.Combobox(
             log_level_frame,
             textvariable=self.log_level_var,
             values=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
             state='readonly',
-            style='TCombobox'
+            style='TCombobox',
+            width=10
         )
         self.log_level_combo.pack(side=LEFT, padx=5)
         self.log_level_combo.bind('<<ComboboxSelected>>', self.change_log_level)
@@ -369,14 +374,6 @@ class App(ttk.Window):
         tenancy_frame = ttk.LabelFrame(self.start_frame, text="Tenancy", padding=10)
         tenancy_frame.pack(fill=X, padx=10, pady=5)
         ttk.Label(tenancy_frame, text="Select the tenancy data source and options.", font=('Helvetica', 10)).pack(anchor='w', pady=2)
-        recursive_check = ttk.Checkbutton(
-            tenancy_frame,
-            text="Recursive",
-            variable=self.recursive_var,
-            command=self.update_recursive,
-            style='TCheckbutton'
-        )
-        recursive_check.pack(anchor='w', padx=5, pady=2)
         load_from_frame = ttk.Frame(tenancy_frame)
         load_from_frame.pack(fill=X, pady=2)
         ttk.Label(load_from_frame, text="Load From:", style='TLabel').pack(side=LEFT, padx=5)
@@ -397,11 +394,22 @@ class App(ttk.Window):
         )
         self.secondary_combo.pack(side=LEFT, padx=5)
         self.secondary_combo.bind('<<ComboboxSelected>>', self.load_data)
+        recursive_load_frame = ttk.Frame(tenancy_frame)
+        recursive_load_frame.pack(fill=X, pady=2)
+        recursive_check = ttk.Checkbutton(
+            recursive_load_frame,
+            text="Recursive",
+            variable=self.recursive_var,
+            command=self.update_recursive,
+            style='TCheckbutton'
+        )
+        recursive_check.pack(side=LEFT, padx=5)
         self.load_button = ttk.Button(
-            load_from_frame,
+            recursive_load_frame,
             text="Load",
             command=self.load_data,
-            style='TButton'
+            style='TButton',
+            bootstyle=INFO
         )
         self.load_button.pack(side=LEFT, padx=5)
 
@@ -409,6 +417,16 @@ class App(ttk.Window):
         ai_config_frame = ttk.LabelFrame(self.start_frame, text="AI Config", padding=10)
         ai_config_frame.pack(fill=X, padx=10, pady=5)
         ttk.Label(ai_config_frame, text="Configure AI model, endpoint, and compartment for insights.", font=('Helvetica', 10)).pack(anchor='w', pady=2)
+        ai_enabled_frame = ttk.Frame(ai_config_frame)
+        ai_enabled_frame.pack(fill=X, pady=2)
+        self.ai_enabled_check = ttk.Checkbutton(
+            ai_enabled_frame,
+            text="AI Enabled",
+            variable=self.ai_enabled_var,
+            command=self.toggle_ai_enabled,
+            style='TCheckbutton'
+        )
+        self.ai_enabled_check.pack(anchor='w', padx=5)
         model_frame = ttk.Frame(ai_config_frame)
         model_frame.pack(fill=X, pady=2)
         ttk.Label(model_frame, text="AI Model:", style='TLabel').pack(side=LEFT, padx=5)
@@ -436,7 +454,8 @@ class App(ttk.Window):
             test_ai_frame,
             text="Test and Save",
             command=self.test_ai,
-            style='TButton'
+            style='TButton',
+            bootstyle=INFO
         )
         self.test_ai_button.pack(side=LEFT, padx=5)
 
@@ -472,11 +491,11 @@ class App(ttk.Window):
         self.ai_insights_frame = ttk.Frame(self, padding=10)
         self.ai_insights_frame.grid(row=1, column=0, sticky='ew')
         ttk.Label(self.ai_insights_frame, text="AI Insights Panel", style='TLabel').pack(fill=X)
-        markdown_text = "# AI Insights\n**Model**: {}\n**Endpoint**: {}\nSample *italic* text.".format(
-            self.ai_model_var.get(), self.ai_endpoint_var.get()
+        markdown_text = "# AI Insights\n**Model**: {}\n**Endpoint**: {}\n**Compartment OCID**: {}\nSample *italic* text.".format(
+            self.ai_model_var.get(), self.ai_endpoint_var.get(), self.compartment_ocid_var.get()
         )
         html_content = markdown.markdown(markdown_text)
-        self.ai_insights_text = HTMLScrolledText(self.ai_insights_frame, height=10)
+        self.ai_insights_text = HTMLScrolledText(self.ai_insights_frame, height=11)  # Increased by 10%
         self.ai_insights_text.pack(fill=BOTH, expand=True)
         self.ai_insights_text.set_html(html_content)
 
@@ -486,7 +505,8 @@ class App(ttk.Window):
             self.console_frame,
             text="Clear",
             command=self.clear_console,
-            style='TButton'
+            style='TButton',
+            bootstyle=INFO
         )
         self.clear_button.pack(side=LEFT, padx=5)
         self.console_text = ScrolledText(self.console_frame, height=10, autohide=True, font=('Helvetica', 10))
@@ -496,8 +516,9 @@ class App(ttk.Window):
         self.text_handler = TextHandler(self.console_text)
         logging.getLogger().addHandler(self.text_handler)
 
-        # Apply saved console visibility
+        # Apply saved console visibility and AI enabled state
         self.toggle_console()
+        self.toggle_ai_enabled()
 
         # Initial setup (populate dropdowns but don't load data)
         self.update_load_from(no_load=True)
@@ -513,6 +534,7 @@ class App(ttk.Window):
                 self.ai_model_var.set(options.get('ai_model', 'default_model'))
                 self.ai_endpoint_var.set(options.get('ai_endpoint', REGION_TO_AI_ENDPOINT.get('us-ashburn-1', 'https://api.example.com')))
                 self.compartment_ocid_var.set(options.get('compartment_ocid', 'default-compartment-id'))
+                self.ai_enabled_var.set(options.get('ai_enabled', True))
                 self.load_from_var.set(options.get('load_from', 'Instance Principal'))
                 self.secondary_var.set(options.get('secondary', ''))
                 self.recursive_var.set(options.get('recursive', False))
@@ -531,6 +553,7 @@ class App(ttk.Window):
                 'ai_model': self.ai_model_var.get(),
                 'ai_endpoint': self.ai_endpoint_var.get(),
                 'compartment_ocid': self.compartment_ocid_var.get(),
+                'ai_enabled': self.ai_enabled_var.get(),
                 'load_from': self.load_from_var.get(),
                 'secondary': self.secondary_var.get(),
                 'recursive': self.recursive_var.get(),
@@ -547,23 +570,46 @@ class App(ttk.Window):
         self.processing_thread.start()
 
     def update_ai_model(self, event=None):
-        self.ai.update_model(self.ai_model_var.get())
-        self.update_ai_insights()
+        if self.ai_enabled_var.get():
+            self.ai.update_model(self.ai_model_var.get())
+            self.update_ai_insights()
 
     def update_ai_endpoint(self, event=None):
-        self.ai.update_endpoint(self.ai_endpoint_var.get())
-        self.update_ai_insights()
+        if self.ai_enabled_var.get():
+            self.ai.update_endpoint(self.ai_endpoint_var.get())
+            self.update_ai_insights()
 
     def update_compartment_ocid(self, event=None):
-        self.ai.update_compartment_id(self.compartment_ocid_var.get())
-        self.update_ai_insights()
+        if self.ai_enabled_var.get():
+            self.ai.update_compartment_id(self.compartment_ocid_var.get())
+            self.update_ai_insights()
 
-    def update_recursive(self, event=None):
-        self.recursive = self.recursive_var.get()
-        # self.ai.update_compartment_id(self.compartment_ocid_var.get())
-        # self.update_ai_insights()
+    def update_recursive(self):
+        self.base_tenancy_data.recursive = self.recursive_var.get()
+        logging.info(f"Recursive setting updated to: {self.recursive_var.get()}")
+        self.save_options()
+
+    def toggle_ai_enabled(self):
+        if self.ai_enabled_var.get():
+            self.ai_insights_frame.grid(row=1, column=0, sticky='ew')
+            self.ai_model_entry['state'] = 'normal'
+            self.ai_endpoint_entry['state'] = 'normal'
+            self.compartment_ocid_entry['state'] = 'normal'
+            self.test_ai_entry['state'] = 'normal'
+            self.test_ai_button['state'] = 'normal'
+        else:
+            self.ai_insights_frame.grid_remove()
+            self.ai_model_entry['state'] = 'disabled'
+            self.ai_endpoint_entry['state'] = 'disabled'
+            self.compartment_ocid_entry['state'] = 'disabled'
+            self.test_ai_entry['state'] = 'disabled'
+            self.test_ai_button['state'] = 'disabled'
+        self.save_options()
 
     def test_ai(self):
+        if not self.ai_enabled_var.get():
+            logging.warning("AI is disabled; cannot test")
+            return
         input_text = self.test_ai_var.get()
         if input_text:
             markdown_text = self.ai.test(input_text)
